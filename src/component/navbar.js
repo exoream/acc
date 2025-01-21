@@ -4,7 +4,7 @@ import DM2 from './image/dm2.png';
 import DM1 from './image/dm1.png';
 import DM3 from './image/dm3.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faExchangeAlt, faBox, faGift, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faExchangeAlt, faBox, faGift, faSignOutAlt, faChartPie } from '@fortawesome/free-solid-svg-icons';
 import Cookies from 'js-cookie';
 
 const Navbar = () => {
@@ -60,8 +60,17 @@ const Navbar = () => {
                     <ul className="space-y-2 px-4 mt-5">
                         <li>
                             <Link
+                                to="/dashboard"
+                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
+                            >
+                                <FontAwesomeIcon icon={faChartPie} className="h-5 w-5 text-gray-600" />
+                                <span className="ms-3">Dashboard</span>
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
                                 to="/user"
-                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group"
+                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
                             >
                                 <FontAwesomeIcon icon={faUsers} className="h-5 w-5 text-gray-600" />
                                 <span className="ms-3">Manajemen Pengguna</span>
@@ -70,7 +79,7 @@ const Navbar = () => {
                         <li>
                             <Link
                                 to="/transaction"
-                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group"
+                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
                             >
                                 <FontAwesomeIcon icon={faExchangeAlt} className="h-5 w-5 text-gray-600" />
                                 <span className="flex-1 ms-3 whitespace-nowrap">Manajemen Transaksi</span>
@@ -79,7 +88,7 @@ const Navbar = () => {
                         <li>
                             <Link
                                 to="/product"
-                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group"
+                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
                             >
                                 <FontAwesomeIcon icon={faBox} className="h-5 w-5 text-gray-600" />
                                 <span className="flex-1 ms-3 whitespace-nowrap">Manajemen Produk</span>
@@ -88,7 +97,7 @@ const Navbar = () => {
                         <li>
                             <Link
                                 to="/voucher"
-                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group"
+                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
                             >
                                 <FontAwesomeIcon icon={faGift} className="h-5 w-5 text-gray-600" />
                                 <span className="flex-1 ms-3 whitespace-nowrap">Manajemen Voucher</span>
@@ -98,7 +107,7 @@ const Navbar = () => {
                     <div className="absolute bottom-5 w-full px-4">
                         <button
                             onClick={openLogoutDialog}
-                            className="flex items-center p-2 text-gray-600 rounded-lg bg-blue-500 hover:bg-blue-600 group w-full justify-center"
+                            className="flex items-center p-2 text-gray-600 rounded-lg bg-blue-500 hover:bg-blue-700 group w-full justify-center transition duration-300"
                         >
                             <FontAwesomeIcon icon={faSignOutAlt} className="h-5 w-5 text-white" />
                             <span className="ms-3 text-white">Logout</span>

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import './App.css';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import User from "./component/user";
 import Navbar from './component/navbar';
 import Product from './component/product';
@@ -10,16 +10,45 @@ import Login from './component/login';
 import Dashboard from './component/dashboard';
 import Cookies from 'js-cookie';
 
+function PrivateRoute({ children }) {
+  const token = Cookies.get("token");
+
+  if (!token) {
+    return <Navigate to="/" />;
+  }
+
+  try {
+    const decodedToken = JSON.parse(atob(token.split(".")[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    if (decodedToken.exp < currentTime) {
+      Cookies.remove("token");
+      return <Navigate to="/" />;
+    }
+  } catch (error) {
+    console.error("Error decoding token:", error);
+    Cookies.remove("token");
+    return <Navigate to="/" />;
+  }
+
+  return children;
+}
+
 function App() {
   const checkTokenExpiration = () => {
-    const token = Cookies.get('token');
+    const token = Cookies.get("token");
 
     if (token) {
-      const decodedToken = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Math.floor(Date.now() / 1000);
+      try {
+        const decodedToken = JSON.parse(atob(token.split(".")[1]));
+        const currentTime = Math.floor(Date.now() / 1000);
 
-      if (decodedToken.exp < currentTime) {
-        Cookies.remove('token');
+        if (decodedToken.exp < currentTime) {
+          Cookies.remove("token");
+        }
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        Cookies.remove("token");
       }
     }
   };
@@ -31,53 +60,63 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/"
-          element={<Login />}
-        />
+        {/* Route Login */}
+        <Route path="/" element={<Login />} />
+
+        {/* Routes yang dilindungi */}
         <Route
           path="/dashboard"
           element={
-            <>
-              <Navbar />
-              <Dashboard />
-            </>
+            <PrivateRoute>
+              <>
+                <Navbar />
+                <Dashboard />
+              </>
+            </PrivateRoute>
           }
         />
         <Route
           path="/user"
           element={
-            <>
-              <Navbar />
-              <User />
-            </>
+            <PrivateRoute>
+              <>
+                <Navbar />
+                <User />
+              </>
+            </PrivateRoute>
           }
         />
         <Route
           path="/product"
           element={
-            <>
-              <Navbar />
-              <Product />
-            </>
+            <PrivateRoute>
+              <>
+                <Navbar />
+                <Product />
+              </>
+            </PrivateRoute>
           }
         />
         <Route
           path="/voucher"
           element={
-            <>
-              <Navbar />
-              <Voucher />
-            </>
+            <PrivateRoute>
+              <>
+                <Navbar />
+                <Voucher />
+              </>
+            </PrivateRoute>
           }
         />
         <Route
           path="/transaction"
           element={
-            <>
-              <Navbar />
-              <Transaction />
-            </>
+            <PrivateRoute>
+              <>
+                <Navbar />
+                <Transaction />
+              </>
+            </PrivateRoute>
           }
         />
       </Routes>

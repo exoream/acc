@@ -3,7 +3,7 @@ import axios from 'axios';
 import Loading from './loading';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Cookies from 'js-cookie';
-import { faEdit, faTrash, faEye, faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash, faEye, faArrowLeft, faArrowRight, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 
 const User = () => {
@@ -16,6 +16,8 @@ const User = () => {
     const [userToDelete, setUserToDelete] = useState(null);
     const [showDetailDialog, setShowDetailDialog] = useState(false);
     const [userDetail, setUserDetail] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchInput, setSearchInput] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -27,26 +29,51 @@ const User = () => {
             }, 200);
             return;
         }
-        axios.get(`https://skripsi-api-859835962101.asia-southeast2.run.app/users?page=${currentPage}`, {
+        axios.get('https://skripsi-api-859835962101.asia-southeast2.run.app/users', {
             headers: {
                 Authorization: `Bearer ${token}`
+            },
+            params: {
+                page: currentPage,
+                limit: 10,
+                search: searchTerm
             }
         })
             .then((response) => {
                 if (response.data.status) {
                     setUsers(response.data.data);
                     setTotalPage(response.data.pagination.last_page);
+                    setError(null);
                 } else {
-                    setError('Gagal mendapatkan data');
+                    setUsers([]);
+                    setTotalPage(1);
+                    setError(null);
                 }
                 setLoading(false);
             })
             .catch((error) => {
-                console.error("Error fetching users:", error);
+                console.error("Error fetching data:", error);
+                setUsers([]);
                 setError('Terjadi kesalahan saat mengambil data');
                 setLoading(false);
             });
-    }, [currentPage]);
+    }, [currentPage, searchTerm]);
+
+    const handleSearchInput = (e) => {
+        setSearchInput(e.target.value);
+    };
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        setSearchTerm(searchInput);
+        setCurrentPage(1);
+    };
+
+    const resetSearch = () => {
+        setSearchTerm('');
+        setSearchInput('');
+        setCurrentPage(1);
+    };
 
     const openDialog = (user) => {
         setUserToDelete(user);
@@ -97,7 +124,21 @@ const User = () => {
         <div className="p-4 sm:ml-64">
             <h1 className="font-medium text-blue-300 text-3xl mt-20">Pengguna</h1>
             <div className="p-4 border-2 border-gray-200 rounded-lg mt-10">
-                <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+                <div className="relative overflow-x-auto sm:rounded-lg p-4">
+                    <div className="relative flex-1 max-w-md mb-8">
+                        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Cari pengguna..."
+                                value={searchInput}
+                                onChange={handleSearchInput}
+                                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </form>
+                    </div>
                     <table className="w-full text-sm text-left rtl:text-right">
                         <thead className="text-xs text-white uppercase bg-blue-300">
                             <tr>
@@ -108,63 +149,80 @@ const User = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {users.map((user, index) => (
-                                <tr key={user.id} className="odd:bg-white even:bg-gray-50 border-b">
-                                    <td className="px-6 py-3">{index + 1}</td>
-                                    <td className="px-6 py-3">{user.name}</td>
-                                    <td className="px-6 py-3">{user.email}</td>
-                                    <td className="px-6 py-3">
-                                        <div className="flex gap-2">
+                            {users.length > 0 ? (
+                                users.map((user, index) => (
+                                    <tr key={user.id} className="odd:bg-white even:bg-gray-50 border-b">
+                                        <td className="px-6 py-3">{index + 1}</td>
+                                        <td className="px-6 py-3">{user.name}</td>
+                                        <td className="px-6 py-3">{user.email}</td>
+                                        <td className="px-6 py-3">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    className="text-white bg-blue-300 hover:bg-blue-600 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                    onClick={() => openDetailDialog(user)}
+                                                >
+                                                    <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" className="px-6 py-10 text-center">
+                                        <div className="flex flex-col items-center justify-center">
+                                            <p className="text-gray-500 text-lg font-medium">Data belum tersedia</p>
+                                            {searchTerm && (
+                                                <p className="text-gray-400 mt-2">
+                                                    Tidak ada pengguna yang sesuai dengan pencarian "{searchTerm}"
+                                                </p>
+                                            )}
                                             <button
-                                                className="text-white bg-green-500 hover:bg-green-800 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
-                                                onClick={() => openDetailDialog(user)}
+                                                onClick={resetSearch}
+                                                className="px-4 py-2 bg-blue-300 hover:bg-blue-500 rounded-lg flex items-center gap-2 mt-4"
                                             >
-                                                <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => openDialog(user)}
-                                                className="text-white bg-red-500 hover:bg-red-800 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
-                                            >
-                                                <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                                                <FontAwesomeIcon icon={faArrowLeft} />
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>
-                <div className="flex justify-center items-center gap-2 mt-4">
-                    <button
-                        onClick={prevPage}
-                        disabled={currentPage === 1}
-                        className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
-                    >
-                        <FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-                    {[...Array(totalPage)].map((_, index) => {
-                        const page = index + 1;
-                        return (
-                            <button
-                                key={page}
-                                onClick={() => goToPage(page)}
-                                className={`px-4 py-2 rounded-lg ${page === currentPage
-                                    ? "bg-blue-500 text-white"
-                                    : "bg-gray-300 hover:bg-gray-400"
-                                    }`}
-                            >
-                                {page}
-                            </button>
-                        );
-                    })}
-                    <button
-                        onClick={nextPage}
-                        disabled={currentPage === totalPage}
-                        className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
-                    >
-                        <FontAwesomeIcon icon={faArrowRight} />
-                    </button>
-                </div>
+                {users.length > 0 && (
+                    <div className="flex justify-center items-center gap-2 mt-4">
+                        <button
+                            onClick={prevPage}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+                        >
+                            <FontAwesomeIcon icon={faArrowLeft} />
+                        </button>
+                        {[...Array(totalPage)].map((_, index) => {
+                            const page = index + 1;
+                            return (
+                                <button
+                                    key={page}
+                                    onClick={() => goToPage(page)}
+                                    className={`px-4 py-2 rounded-lg ${page === currentPage
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-gray-300 hover:bg-gray-400"
+                                        }`}
+                                >
+                                    {page}
+                                </button>
+                            );
+                        })}
+                        <button
+                            onClick={nextPage}
+                            disabled={currentPage === totalPage}
+                            className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+                        >
+                            <FontAwesomeIcon icon={faArrowRight} />
+                        </button>
+                    </div>
+                )}
             </div>
             {showDialog && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
@@ -191,14 +249,46 @@ const User = () => {
             )}
             {showDetailDialog && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg text-center w-96">
-                        <h2 className="text-lg font-semibold mb-4">Detail Pengguna</h2>
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm p-12">
+                        <h2 className="text-lg font-bold text-blue-300 mb-8">Detail Pengguna</h2>
                         {userDetail && (
                             <div className="text-left">
-                                <p><strong>Nama:</strong> {userDetail.name}</p>
-                                <p><strong>Username:</strong> {userDetail.username}</p>
-                                <p><strong>Email:</strong> {userDetail.email}</p>
-                                <p><strong>Point:</strong> {userDetail.point}</p>
+                                <div className="mb-4">
+                                    <h4 className="mb-2 font-semibold">Nama:</h4>
+                                    <input
+                                        type="text"
+                                        value={userDetail.name}
+                                        readOnly
+                                        className="w-full border rounded-lg p-2"
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <h4 className="mb-2 font-semibold">Username:</h4>
+                                    <input
+                                        type="text font-semibold"
+                                        value={userDetail.username}
+                                        readOnly
+                                        className="w-full border rounded-lg p-2"
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <h4 className="mb-2 font-semibold">Email:</h4>
+                                    <input
+                                        type="text"
+                                        value={userDetail.email}
+                                        readOnly
+                                        className="w-full border rounded-lg p-2"
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <h4 className="mb-2 font-semibold">Poin:</h4>
+                                    <input
+                                        type="text"
+                                        value={userDetail.point}
+                                        readOnly
+                                        className="w-full border rounded-lg p-2"
+                                    />
+                                </div>
                             </div>
                         )}
                         <button

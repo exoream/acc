@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faArrowRight, faEdit, faEye, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faArrowRight, faEdit, faEye, faTrash, faSearch } from '@fortawesome/free-solid-svg-icons';
 import Loading from './loading';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,8 @@ const Product = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchInput, setSearchInput] = useState('');
 
     const navigate = useNavigate();
 
@@ -45,6 +47,25 @@ const Product = () => {
         image: null,
         product_size: []
     });
+
+    const handleSearchInput = (e) => {
+        setSearchInput(e.target.value);
+    };
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        const formattedSearchTerm = searchInput
+            .toLowerCase()
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+        setSearchTerm(formattedSearchTerm);
+        setCurrentPage(1);
+    };
+
+    const resetSearch = () => {
+        setSearchTerm('');
+        setSearchInput('');
+        setCurrentPage(1);
+    };
 
     const openCreateDialog = () => setIsCreateDialogOpen(true);
     const closeCreateDialog = () => setIsCreateDialogOpen(false);
@@ -183,6 +204,7 @@ const Product = () => {
             });
             setProducts([...products, newProduct]);
             closeCreateDialog();
+            window.location.reload();
         } catch (error) {
             console.error("Error creating product:", error);
             setError('Gagal menambahkan produk');
@@ -249,23 +271,29 @@ const Product = () => {
             params: {
                 page: currentPage,
                 limit: 10,
+                search: searchTerm
             }
         })
             .then((response) => {
                 if (response.data.status) {
                     setProducts(response.data.data);
                     setTotalPages(response.data.pagination.last_page);
+                    setError(null);
                 } else {
-                    setError('Gagal mendapatkan data produk');
+                    setProducts([]);
+                    setTotalPages(1);
+                    setError(null);
                 }
                 setLoading(false);
             })
             .catch((error) => {
                 console.error("Error fetching products:", error);
+                setProducts([]);
                 setError('Terjadi kesalahan saat mengambil data produk');
                 setLoading(false);
             });
-    }, [currentPage]);
+    }, [currentPage, searchTerm]);
+
 
     if (loading) {
         return <Loading />;
@@ -278,14 +306,33 @@ const Product = () => {
     return (
         <div className="p-4 sm:ml-64">
             <h1 className="font-medium text-blue-300 text-3xl mt-20">Produk</h1>
-            <button
-                onClick={openCreateDialog}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-800 text-white rounded-lg mt-10"
-            >
-                Tambah Product
-            </button>
             <div className="p-4 border-2 border-gray-200 rounded-lg mt-10">
-                <div className="overflow-x-auto shadow-md sm:rounded-lg">
+                <div className="overflow-x-auto sm:rounded-lg p-4">
+                    <div className="flex items-center justify-between gap-4 mb-8">
+                        <div className="relative flex-1 max-w-md">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+                            </div>
+                            <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Cari produk..."
+                                    value={searchInput}
+                                    onChange={handleSearchInput}
+                                    className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </form>
+                        </div>
+                        <button
+                            onClick={openCreateDialog}
+                            className="px-4 py-2 bg-blue-500 hover:bg-blue-800 text-white rounded-lg"
+                        >
+                            Tambah Product
+                        </button>
+                    </div>
                     <table className="w-full text-sm text-left rtl:text-right">
                         <thead className="text-xs text-white uppercase bg-blue-300">
                             <tr>
@@ -296,68 +343,91 @@ const Product = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {products.map((product, index) => (
-                                <tr key={product.id} className="odd:bg-white even:bg-gray-50 border-b">
-                                    <td className="px-6 py-3">{index + 1}</td>
-                                    <td className="px-6 py-3">{product.name}</td>
-                                    <td className="px-6 py-3">{new Intl.NumberFormat().format(product.price)}</td>
-                                    <td className="px-6 py-3">
-                                        <div className="flex gap-2">
+                            {products.length > 0 ? (
+                                products.map((product, index) => (
+                                    <tr key={product.id} className="odd:bg-white even:bg-gray-50 border-b">
+                                        <td className="px-6 py-3">{index + 1}</td>
+                                        <td className="px-6 py-3">{product.name}</td>
+                                        <td className="px-6 py-3">{new Intl.NumberFormat().format(product.price)}</td>
+                                        <td className="px-6 py-3">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => openDetailDialog(product)}
+                                                    className="text-white bg-blue-300 hover:bg-blue-600 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                >
+                                                    <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => openEditDialog(product)}
+                                                    className="text-white bg-yellow-500 hover:bg-yellow-700 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                >
+                                                    <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => openDeleteDialog(product)}
+                                                    className="text-white bg-red-500 hover:bg-red-800 font-medium rounded-lg text-sm px-3 py-2 flex items-center">
+                                                    <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className="px-6 py-10 text-center">
+                                        <div className="flex flex-col items-center justify-center">
+                                            <p className="text-gray-500 text-lg font-medium">Data belum tersedia</p>
+                                            {searchTerm && (
+                                                <p className="text-gray-400 mt-2">
+                                                    Tidak ada produk yang sesuai dengan pencarian "{searchTerm}"
+                                                </p>
+                                            )}
                                             <button
-                                                onClick={() => openEditDialog(product)} // Fungsi untuk membuka dialog edit
-                                                className="text-white bg-blue-300 hover:bg-blue-500 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                onClick={resetSearch}
+                                                className="px-4 py-2 bg-blue-300 hover:bg-blue-500 rounded-lg flex items-center gap-2 mt-4"
                                             >
-                                                <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => openDeleteDialog(product)}
-                                                className="text-white bg-red-500 hover:bg-red-800 font-medium rounded-lg text-sm px-3 py-2 flex items-center">
-                                                <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => openDetailDialog(product)}
-                                                className="text-white bg-green-500 hover:bg-green-700 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
-                                            >
-                                                <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+                                                <FontAwesomeIcon icon={faArrowLeft} />
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>
-                <div className="flex justify-center items-center gap-2 mt-4">
-                    <button
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
-                    >
-                        <FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-                    {[...Array(totalPages)].map((_, index) => {
-                        const page = index + 1;
-                        return (
-                            <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`px-4 py-2 rounded-lg ${page === currentPage
-                                    ? "bg-blue-500 text-white"
-                                    : "bg-gray-300 hover:bg-gray-400"
-                                    }`}
-                            >
-                                {page}
-                            </button>
-                        );
-                    })}
-                    <button
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
-                    >
-                        <FontAwesomeIcon icon={faArrowRight} />
-                    </button>
-                </div>
+                {products.length > 0 && (
+                    <div className="flex justify-center items-center gap-2 mt-4">
+                        <button
+                            onClick={() => setCurrentPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+                        >
+                            <FontAwesomeIcon icon={faArrowLeft} />
+                        </button>
+                        {[...Array(totalPages)].map((_, index) => {
+                            const page = index + 1;
+                            return (
+                                <button
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`px-4 py-2 rounded-lg ${page === currentPage
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-gray-300 hover:bg-gray-400"
+                                        }`}
+                                >
+                                    {page}
+                                </button>
+                            );
+                        })}
+                        <button
+                            onClick={() => setCurrentPage(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+                        >
+                            <FontAwesomeIcon icon={faArrowRight} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {isDeleteDialogOpen && productToDelete && (
@@ -385,7 +455,7 @@ const Product = () => {
 
             {isDetailDialogOpen && selectedProduct && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                    <div className="relative bg-white p-6 rounded-lg w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+                    <div className="relative bg-white p-6 rounded-lg w-full max-w-3xl max-h-[80vh] overflow-y-auto p-10">
                         <button
                             onClick={closeDetailDialog}
                             className="absolute top-2 right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition duration-200"
@@ -393,32 +463,80 @@ const Product = () => {
                         >
                             ✖
                         </button>
-                        <h2 className="text-lg font-bold mb-4">Detail Produk</h2>
+                        <h2 className="text-lg text-blue-300 font-bold mb-8">Detail Produk</h2>
+                        <div className="mb-4">
+                            <h4 className="mb-2 font-semibold">Nama Produk:</h4>
+                            <input
+                                type="text"
+                                value={selectedProduct.name}
+                                readOnly
+                                className="w-full border rounded-lg p-2"
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <h4 className="mb-2 font-semibold">Harga:</h4>
+                            <input
+                                type="text"
+                                value={`Rp ${new Intl.NumberFormat().format(selectedProduct.price)}`}
+                                readOnly
+                                className="w-full border rounded-lg p-2"
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <h4 className="mb-2 font-semibold">Deskripsi:</h4>
+                            <textarea
+                                value={selectedProduct.description || "Tidak ada deskripsi"}
+                                readOnly
+                                rows={5}
+                                className="w-full border rounded-lg p-2"
+                            ></textarea>
+                        </div>
+                        <div className="mb-4">
+                            <h4 className="mb-2 font-semibold">Kategori:</h4>
+                            <input
+                                type="text"
+                                value={selectedProduct.category}
+                                readOnly
+                                className="w-full border rounded-lg p-2"
+                            />
+                        </div>
+                        <div className="mb-8">
+                            <h4 className="mb-2 font-semibold">Gambar :</h4>
+                            <img
+                                src={selectedProduct.image}
+                                alt={selectedProduct.name}
+                                className="w-64 h-64 object-cover mb-4 rounded-lg"
+                            />
+                        </div>
 
-                        <div className="mb-4">
-                            <strong>Nama Produk:</strong> {selectedProduct.name}
-                        </div>
-                        <div className="mb-4">
-                            <strong>Harga:</strong> Rp {new Intl.NumberFormat().format(selectedProduct.price)}
-                        </div>
-                        <div className="mb-4">
-                            <strong>Deskripsi:</strong> {selectedProduct.description || "Tidak ada deskripsi"}
-                        </div>
-                        <div className="mb-4">
-                            <strong>Kategori:</strong> {selectedProduct.category}
-                        </div>
-                        <div className="mb-4">
-                            <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-64 object-cover mb-4" />
-                        </div>
-
-                        <h3 className="text-lg font-bold mb-4">Ukuran & Stok</h3>
+                        <h3 className="mb-4 font-semibold">Ukuran & Stok</h3>
                         <div>
                             {selectedProduct.product_size.map(size => (
-                                <div key={size.id} className="mb-2">
-                                    <p><strong>Ukuran:</strong> {size.size}</p>
-                                    <p><strong>Deskripsi:</strong> {size.description}</p>
-                                    <p><strong>Stok:</strong> {size.stock}</p>
+                                <div key={size.id} className="mb-8">
+                                    <h4 className="mb-2">Ukuran:</h4>
+                                    <input
+                                        type="text"
+                                        value={size.size}
+                                        readOnly
+                                        className="w-full border rounded-lg p-2 mb-2"
+                                    />
+                                    <h4 className="mb-2">Deskripsi:</h4>
+                                    <textarea
+                                        value={size.description}
+                                        readOnly
+                                        rows={5}
+                                        className="w-full border rounded-lg p-2 mb-2"
+                                    />
+                                    <h4 className="mb-2">Stok:</h4>
+                                    <input
+                                        type="text"
+                                        value={size.stock}
+                                        readOnly
+                                        className="w-full border rounded-lg p-2 mb-4"
+                                    />
+                                    <hr className="border-t-4" />
                                 </div>
+
                             ))}
                         </div>
 
@@ -432,55 +550,57 @@ const Product = () => {
                         </div>
                     </div>
                 </div>
+
             )}
 
             {isCreateDialogOpen && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                    <div className="bg-white p-6 rounded-lg w-full max-w-md">
-                        <h2 className="text-lg font-medium mb-4">Tambah Produk</h2>
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 ">
+                    <div className="relative bg-white p-6 rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto">
+                        <h2 className="text-lg font-bold text-blue-300 mb-8">Tambah Produk</h2>
                         <form onSubmit={(e) => e.preventDefault()}>
+                            <h4 className='mb-2 font-semibold'>Nama Produk</h4>
                             <input
                                 type="text"
                                 name="name"
-                                placeholder="Nama Produk"
                                 value={newProduct.name}
                                 onChange={handleInputChange}
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-4"
                             />
+                            <h4 className='mb-2 font-semibold'>Deskripsi</h4>
                             <textarea
                                 name="description"
-                                placeholder="Deskripsi Produk"
                                 value={newProduct.description}
                                 onChange={handleInputChange}
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-4"
                             />
+                            <h4 className='mb-2 font-semibold'>Harga</h4>
                             <input
                                 type="number"
                                 name="price"
-                                placeholder="Harga Produk"
                                 value={newProduct.price}
                                 onChange={handleInputChange}
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-4"
                             />
+                            <h4 className='mb-2 font-semibold'>Kategori</h4>
                             <input
                                 type="text"
                                 name="category"
-                                placeholder="Kategori Produk"
                                 value={newProduct.category}
                                 onChange={handleInputChange}
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-4"
                             />
+                            <h4 className='mb-2 font-semibold'>Gambar</h4>
                             <input
                                 type="file"
                                 name="image"
                                 onChange={handleImageChange}
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-4"
                             />
-
-                            <div className="mt-4">
-                                <h3 className="text-lg">Ukuran dan Stok</h3>
+                            <div>
+                                <h3 className="mb-2 font-semibold">Ukuran dan Stok</h3>
                                 {newProduct.product_size.map((size, index) => (
-                                    <div key={index} className="flex gap-4">
+                                    <div key={index}>
+                                        <h4 className='mb-2 text-sm'>{size.size}</h4>
                                         <input
                                             type="number"
                                             name={`product_size[${index}].stock`}
@@ -489,18 +609,18 @@ const Product = () => {
                                             onChange={handleInputChange}
                                             className="w-full p-2 border rounded mb-2"
                                         />
-                                        <input
+                                        <textarea
                                             type="text"
                                             name={`product_size[${index}].description`}
                                             placeholder={`Deskripsi Ukuran ${size.size}`}
                                             value={size.description}
+                                            rows={5}
                                             onChange={handleInputChange}
                                             className="w-full p-2 border rounded mb-2"
                                         />
                                     </div>
                                 ))}
                             </div>
-
 
                             <div className="flex justify-center gap-4 mt-4">
                                 {loading2 ? (
@@ -513,20 +633,19 @@ const Product = () => {
                                     <>
                                         <button
                                             onClick={createProduct}
-                                            className="w-full md:w-auto py-3 px-6 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                                            className="bg-blue-500 hover:bg-blue-800 text-white px-4 py-2 rounded-lg"
                                         >
                                             Simpan
                                         </button>
                                         <button
                                             onClick={closeCreateDialog}
-                                            className="w-full md:w-auto py-3 px-6 bg-gray-400 text-white rounded-lg shadow-lg hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 transition duration-300"
+                                            className="bg-gray-300 hover:bg-gray-500 text-black px-4 py-2 rounded-lg"
                                         >
                                             Batal
                                         </button>
                                     </>
                                 )}
                             </div>
-
                         </form>
                     </div>
                 </div>
@@ -534,51 +653,54 @@ const Product = () => {
 
             {isEditDialogOpen && productToEdit && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                    <div className="bg-white p-6 rounded-lg w-full max-w-md">
-                        <h2 className="text-lg font-medium mb-4">Update Produk</h2>
+                    <div className="relative bg-white p-6 rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto">
+                        <h2 className="text-lg font-bold text-blue-300 mb-8">Update Produk</h2>
                         <form onSubmit={(e) => e.preventDefault()}>
+                            <h4 className='mb-2 font-semibold'>Nama Produk:</h4>
                             <input
                                 type="text"
                                 name="name"
-                                placeholder="Nama Produk"
                                 value={productToEdit.name}
                                 onChange={handleInputChangeEdit}
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-4"
                             />
+                            <h4 className='mb-2 font-semibold'>Deskripsi:</h4>
                             <textarea
                                 name="description"
-                                placeholder="Deskripsi Produk"
                                 value={productToEdit.description}
                                 onChange={handleInputChangeEdit}
-                                className="w-full p-2 border rounded mb-2"
+                                rows={5}
+                                className="w-full p-2 border rounded mb-4"
                             />
+                            <h4 className='mb-2 font-semibold'>Harga:</h4>
                             <input
                                 type="number"
                                 name="price"
-                                placeholder="Harga Produk"
                                 value={productToEdit.price}
                                 onChange={handleInputChangeEdit}
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-4"
                             />
+                            <h4 className='mb-2 font-semibold'>Kategori:</h4>
                             <input
                                 type="text"
                                 name="category"
-                                placeholder="Kategori Produk"
                                 value={productToEdit.category}
                                 onChange={handleInputChangeEdit}
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-4"
                             />
+                            <h4 className='mb-2 font-semibold'>Gambar:</h4>
                             <input
                                 type="file"
                                 name="image"
                                 onChange={handleImageChangeEdit}
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-4"
                             />
 
                             <div className="mt-4">
-                                <h3 className="text-lg">Ukuran dan Stok</h3>
+                                <h3 className='mb-2 font-semibold'>Ukuran dan Stok</h3>
                                 {productToEdit.product_size.map((size, index) => (
-                                    <div key={index} className="flex gap-4">
+                                    <div key={index}>
+                                        <h4 className='mb-2 text-sm'>{size.size}</h4>
                                         <input
                                             type="number"
                                             name={`product_size[${index}].stock`}
@@ -587,11 +709,12 @@ const Product = () => {
                                             onChange={handleInputChangeEdit}
                                             className="w-full p-2 border rounded mb-2"
                                         />
-                                        <input
+                                        <textarea
                                             type="text"
                                             name={`product_size[${index}].description`}
                                             placeholder={`Deskripsi Ukuran ${size.size}`}
                                             value={size.description}
+                                            rows={5}
                                             onChange={handleInputChangeEdit}
                                             className="w-full p-2 border rounded mb-2"
                                         />
