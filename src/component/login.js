@@ -8,7 +8,9 @@ import DM1 from './image/dm1.png';
 import '../App.css';
 
 const Login = () => {
-    let navigate = useNavigate();
+    const navigate = useNavigate();
+    const [errorMessage, setErrorMessage] = useState("");
+    const [error, setError] = useState(false);
 
     const [input, setInput] = useState({
         email: "",
@@ -24,8 +26,8 @@ const Login = () => {
     }, [navigate]);
 
     const handleChange = (event) => {
-        let value = event.target.value;
-        let name = event.target.name;
+        const value = event.target.value;
+        const name = event.target.name;
         setInput({ ...input, [name]: value });
     };
 
@@ -39,11 +41,14 @@ const Login = () => {
                 let token = res.data.data.token;
                 Cookies.set('token', token, { expires: 1 });
                 navigate('/dashboard');
-                alert("Berhasil login");
             })
             .catch((error) => {
                 console.error("Error Response:", error.response);
-                alert(error.message);
+                setErrorMessage(error.response.data.message);
+                setError(true);
+                setTimeout(() => {
+                    setError(false);
+                }, 3000);
             })
             .finally(() => {
                 setLoading(false);
@@ -63,7 +68,7 @@ const Login = () => {
                     className="absolute top-0 right-0 h-10 m-2"
                 />
                 <form className="w-full max-w-md" onSubmit={handleLogin}>
-                    <h1 className="text-3xl font-bold text-blue-300 mb-10">Login</h1>
+                    <h1 className="text-3xl font-bold text-[#3ABEF9] mb-10">Login</h1>
                     <p className="text-gray-300 mb-10">
                         Login terlebih dahulu untuk mengakses halaman Admin
                     </p>
@@ -72,8 +77,7 @@ const Login = () => {
                         <input
                             type="email"
                             name="email"
-                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                            required
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3ABEF9] focus:border-transparent w-full p-3"
                             onChange={handleChange}
                             value={input.email}
                             disabled={loading}
@@ -84,8 +88,7 @@ const Login = () => {
                         <input
                             type="password"
                             name="password"
-                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                            required
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3ABEF9] focus:border-transparent w-full p-3"
                             onChange={handleChange}
                             value={input.password}
                             disabled={loading}
@@ -93,7 +96,7 @@ const Login = () => {
                     </div>
                     <button
                         type="submit"
-                        className="text-white mb-5 bg-blue-300 hover:bg-blue-400 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full px-5 py-2.5 text-center"
+                        className="text-white mb-5 bg-[#3ABEF9] hover:bg-blue-500 font-medium rounded-lg text-sm w-full py-3 text-center"
                         disabled={loading}
                     >
                         Login
@@ -108,6 +111,12 @@ const Login = () => {
 
                 </form>
             </div>
+
+            {error && (
+                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-black text-white px-4 py-2 rounded-md shadow-lg z-50">
+                    {errorMessage}
+                </div>
+            )}
         </div>
     );
 };

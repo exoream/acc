@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 const User = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPage, setTotalPage] = useState(1);
     const [showDialog, setShowDialog] = useState(false);
@@ -18,12 +17,13 @@ const User = () => {
     const [userDetail, setUserDetail] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchInput, setSearchInput] = useState('');
+    const [errorMessage, setErrorMessage] = useState("");
+    const [error, setError] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
         const token = Cookies.get('token');
         if (!token) {
-            setError('Token tidak ditemukan, silakan login kembali');
             setTimeout(() => {
                 navigate('/');
             }, 200);
@@ -43,18 +43,20 @@ const User = () => {
                 if (response.data.status) {
                     setUsers(response.data.data);
                     setTotalPage(response.data.pagination.last_page);
-                    setError(null);
                 } else {
                     setUsers([]);
                     setTotalPage(1);
-                    setError(null);
                 }
                 setLoading(false);
             })
             .catch((error) => {
                 console.error("Error fetching data:", error);
                 setUsers([]);
-                setError('Terjadi kesalahan saat mengambil data');
+                setErrorMessage(error.response.data.message);
+                setError(true);
+                setTimeout(() => {
+                    setError(false);
+                }, 3000);
                 setLoading(false);
             });
     }, [currentPage, searchTerm]);
@@ -122,7 +124,7 @@ const User = () => {
 
     return (
         <div className="p-4 sm:ml-64">
-            <h1 className="font-medium text-blue-300 text-3xl mt-20">Pengguna</h1>
+            <h1 className="font-medium text-[#3ABEF9] text-3xl mt-20">Pengguna</h1>
             <div className="p-4 border-2 border-gray-200 rounded-lg mt-10">
                 <div className="relative overflow-x-auto sm:rounded-lg p-4">
                     <div className="relative flex-1 max-w-md mb-8">
@@ -135,60 +137,62 @@ const User = () => {
                                 placeholder="Cari pengguna..."
                                 value={searchInput}
                                 onChange={handleSearchInput}
-                                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3ABEF9] focus:border-transparent"
                             />
                         </form>
                     </div>
-                    <table className="w-full text-sm text-left rtl:text-right">
-                        <thead className="text-xs text-white uppercase bg-blue-300">
-                            <tr>
-                                <th scope="col" className="px-6 py-3">No</th>
-                                <th scope="col" className="px-6 py-3">Nama</th>
-                                <th scope="col" className="px-6 py-3">Email</th>
-                                <th scope="col" className="px-6 py-3">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.length > 0 ? (
-                                users.map((user, index) => (
-                                    <tr key={user.id} className="odd:bg-white even:bg-gray-50 border-b">
-                                        <td className="px-6 py-3">{index + 1}</td>
-                                        <td className="px-6 py-3">{user.name}</td>
-                                        <td className="px-6 py-3">{user.email}</td>
-                                        <td className="px-6 py-3">
-                                            <div className="flex gap-2">
+                    <div className="relative overflow-hidden rounded-lg border border-gray-200">
+                        <table className="w-full text-sm text-left rtl:text-right">
+                            <thead className="text-xs text-white uppercase bg-[#3ABEF9] rounded-t-lg">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">No</th>
+                                    <th scope="col" className="px-6 py-3">Nama</th>
+                                    <th scope="col" className="px-6 py-3">Email</th>
+                                    <th scope="col" className="px-6 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.length > 0 ? (
+                                    users.map((user, index) => (
+                                        <tr key={user.id} className="odd:bg-white even:bg-gray-50 border-b last:rounded-b-lg">
+                                            <td className="px-6 py-3">{(currentPage - 1) * 10 + index + 1}</td>
+                                            <td className="px-6 py-3">{user.name}</td>
+                                            <td className="px-6 py-3">{user.email}</td>
+                                            <td className="px-6 py-3">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        className="text-white bg-[#3ABEF9] hover:bg-blue-500 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                        onClick={() => openDetailDialog(user)}
+                                                    >
+                                                        <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-10 text-center">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <p className="text-gray-500 text-lg font-medium">Data belum tersedia</p>
+                                                {searchTerm && (
+                                                    <p className="text-gray-400 mt-2">
+                                                        Tidak ada pengguna yang sesuai dengan pencarian "{searchTerm}"
+                                                    </p>
+                                                )}
                                                 <button
-                                                    className="text-white bg-blue-300 hover:bg-blue-600 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
-                                                    onClick={() => openDetailDialog(user)}
+                                                    onClick={resetSearch}
+                                                    className="px-4 py-2 bg-blue-300 hover:bg-blue-500 rounded-lg flex items-center gap-2 mt-4"
                                                 >
-                                                    <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+                                                    <FontAwesomeIcon icon={faArrowLeft} className='text-white' />
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" className="px-6 py-10 text-center">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-gray-500 text-lg font-medium">Data belum tersedia</p>
-                                            {searchTerm && (
-                                                <p className="text-gray-400 mt-2">
-                                                    Tidak ada pengguna yang sesuai dengan pencarian "{searchTerm}"
-                                                </p>
-                                            )}
-                                            <button
-                                                onClick={resetSearch}
-                                                className="px-4 py-2 bg-blue-300 hover:bg-blue-500 rounded-lg flex items-center gap-2 mt-4"
-                                            >
-                                                <FontAwesomeIcon icon={faArrowLeft} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 {users.length > 0 && (
                     <div className="flex justify-center items-center gap-2 mt-4">
@@ -206,7 +210,7 @@ const User = () => {
                                     key={page}
                                     onClick={() => goToPage(page)}
                                     className={`px-4 py-2 rounded-lg ${page === currentPage
-                                        ? "bg-blue-500 text-white"
+                                        ? "bg-[#3ABEF9] text-white"
                                         : "bg-gray-300 hover:bg-gray-400"
                                         }`}
                                 >
@@ -250,7 +254,7 @@ const User = () => {
             {showDetailDialog && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm p-12">
-                        <h2 className="text-lg font-bold text-blue-300 mb-8">Detail Pengguna</h2>
+                        <h2 className="text-lg font-bold text-[#3ABEF9] mb-8">Detail Pengguna</h2>
                         {userDetail && (
                             <div className="text-left">
                                 <div className="mb-4">
@@ -298,6 +302,11 @@ const User = () => {
                             Tutup
                         </button>
                     </div>
+                </div>
+            )}
+            {error && (
+                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-black text-white px-4 py-2 rounded-md shadow-lg z-50">
+                    {errorMessage}
                 </div>
             )}
         </div>

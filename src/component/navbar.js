@@ -6,10 +6,12 @@ import DM3 from './image/dm3.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faExchangeAlt, faBox, faGift, faSignOutAlt, faChartPie } from '@fortawesome/free-solid-svg-icons';
 import Cookies from 'js-cookie';
+import { useLocation } from 'react-router-dom';
 
 const Navbar = () => {
     const [openDialog, setOpenDialog] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogout = () => {
         Cookies.remove('token');
@@ -32,10 +34,10 @@ const Navbar = () => {
                         <div className="flex items-center justify-between w-full">
                             <div className="flex items-center justify-start rtl:justify-end">
                             </div>
-                            <div className='flex items-center gap-4 p-3 bg-gradient-to-r from-blue-200 via-blue-300 to-blue-400 rounded-lg shadow-md'>
-                                <div className='h-6 w-2 bg-gradient-to-b from-blue-400 to-blue-600 rounded-lg'></div>
+                            <div className='flex items-center gap-4'>
+                                <div className='h-6 w-2 bg-[#3ABEF9] rounded-lg'></div>
                                 <h1 className='text-lg font-bold text-gray-700 flex items-center'>
-                                    <span className='mr-2'>🎉</span> Selamat datang, Admin!
+                                    Alni Accessories
                                 </h1>
                             </div>
                             <img src={DM3} className='h-10 mr-10' />
@@ -61,53 +63,58 @@ const Navbar = () => {
                         <li>
                             <Link
                                 to="/dashboard"
-                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
+                                className={`flex items-center p-2 rounded-lg transition duration-300 ${location.pathname === "/dashboard" ? "bg-[#3ABEF9] text-white" : "text-gray-600 hover:bg-blue-200"
+                                    }`}
                             >
-                                <FontAwesomeIcon icon={faChartPie} className="h-5 w-5 text-gray-600" />
+                                <FontAwesomeIcon icon={faChartPie} className="h-5 w-5" />
                                 <span className="ms-3">Dashboard</span>
                             </Link>
                         </li>
                         <li>
                             <Link
                                 to="/user"
-                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
+                                className={`flex items-center p-2 rounded-lg transition duration-300 ${location.pathname === "/user" ? "bg-[#3ABEF9] text-white" : "text-gray-600 hover:bg-blue-200"
+                                    }`}
                             >
-                                <FontAwesomeIcon icon={faUsers} className="h-5 w-5 text-gray-600" />
+                                <FontAwesomeIcon icon={faUsers} className="h-5 w-5" />
                                 <span className="ms-3">Manajemen Pengguna</span>
                             </Link>
                         </li>
                         <li>
                             <Link
                                 to="/transaction"
-                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
+                                className={`flex items-center p-2 rounded-lg transition duration-300 ${location.pathname === "/transaction" ? "bg-[#3ABEF9] text-white" : "text-gray-600 hover:bg-blue-200"
+                                    }`}
                             >
-                                <FontAwesomeIcon icon={faExchangeAlt} className="h-5 w-5 text-gray-600" />
-                                <span className="flex-1 ms-3 whitespace-nowrap">Manajemen Transaksi</span>
+                                <FontAwesomeIcon icon={faExchangeAlt} className="h-5 w-5" />
+                                <span className="ms-3">Manajemen Transaksi</span>
                             </Link>
                         </li>
                         <li>
                             <Link
                                 to="/product"
-                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
+                                className={`flex items-center p-2 rounded-lg transition duration-300 ${location.pathname === "/product" ? "bg-[#3ABEF9] text-white" : "text-gray-600 hover:bg-blue-200"
+                                    }`}
                             >
-                                <FontAwesomeIcon icon={faBox} className="h-5 w-5 text-gray-600" />
-                                <span className="flex-1 ms-3 whitespace-nowrap">Manajemen Produk</span>
+                                <FontAwesomeIcon icon={faBox} className="h-5 w-5" />
+                                <span className="ms-3">Manajemen Produk</span>
                             </Link>
                         </li>
                         <li>
                             <Link
                                 to="/voucher"
-                                className="flex items-center p-2 text-gray-600 rounded-lg hover:bg-blue-200 group transition duration-300"
+                                className={`flex items-center p-2 rounded-lg transition duration-300 ${location.pathname === "/voucher" ? "bg-[#3ABEF9] text-white" : "text-gray-600 hover:bg-blue-200"
+                                    }`}
                             >
-                                <FontAwesomeIcon icon={faGift} className="h-5 w-5 text-gray-600" />
-                                <span className="flex-1 ms-3 whitespace-nowrap">Manajemen Voucher</span>
+                                <FontAwesomeIcon icon={faGift} className="h-5 w-5" />
+                                <span className="ms-3">Manajemen Voucher</span>
                             </Link>
                         </li>
                     </ul>
                     <div className="absolute bottom-5 w-full px-4">
                         <button
                             onClick={openLogoutDialog}
-                            className="flex items-center p-2 text-gray-600 rounded-lg bg-blue-500 hover:bg-blue-700 group w-full justify-center transition duration-300"
+                            className="flex items-center p-2 text-gray-600 rounded-lg bg-[#3ABEF9] hover:bg-blue-500 group w-full justify-center transition duration-300"
                         >
                             <FontAwesomeIcon icon={faSignOutAlt} className="h-5 w-5 text-white" />
                             <span className="ms-3 text-white">Logout</span>

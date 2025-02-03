@@ -11,7 +11,6 @@ const Product = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loading2, setLoading2] = useState(false);
-    const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -21,10 +20,11 @@ const Product = () => {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchInput, setSearchInput] = useState('');
-
+    const [errorMessage, setErrorMessage] = useState("");
+    const [error, setError] = useState(false);
     const navigate = useNavigate();
-
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
     const [newProduct, setNewProduct] = useState({
         name: '',
         description: '',
@@ -104,7 +104,6 @@ const Product = () => {
         if (productToDelete) {
             const token = Cookies.get('token');
             if (!token) {
-                setError('Token tidak ditemukan, silakan login kembali');
                 setTimeout(() => {
                     navigate('/');
                 }, 200);
@@ -121,7 +120,11 @@ const Product = () => {
                 closeDeleteDialog();
             } catch (error) {
                 console.error("Error deleting product:", error);
-                setError('Terjadi kesalahan saat menghapus produk');
+                setErrorMessage(error.response.data.message);
+                setError(true);
+                setTimeout(() => {
+                    setError(false);
+                }, 3000);
                 closeDeleteDialog();
             }
         }
@@ -130,7 +133,6 @@ const Product = () => {
     const updateProduct = async () => {
         const token = Cookies.get('token');
         if (!token) {
-            setError('Token tidak ditemukan, silakan login kembali');
             return;
         }
 
@@ -165,7 +167,11 @@ const Product = () => {
             closeEditDialog();
         } catch (error) {
             console.error("Error updating product:", error);
-            setError('Gagal memperbarui produk');
+            setErrorMessage(error.response.data.message);
+            setError(true);
+            setTimeout(() => {
+                setError(false);
+            }, 3000);
         } finally {
             setLoading2(false);
         }
@@ -174,7 +180,6 @@ const Product = () => {
     const createProduct = async () => {
         const token = Cookies.get('token');
         if (!token) {
-            setError('Token tidak ditemukan, silakan login kembali');
             return;
         }
 
@@ -207,12 +212,15 @@ const Product = () => {
             window.location.reload();
         } catch (error) {
             console.error("Error creating product:", error);
-            setError('Gagal menambahkan produk');
+            setErrorMessage(error.response.data.message);
+            setError(true);
+            setTimeout(() => {
+                setError(false);
+            }, 3000);
         } finally {
             setLoading2(false);
         }
     };
-
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -257,7 +265,6 @@ const Product = () => {
     useEffect(() => {
         const token = Cookies.get('token');
         if (!token) {
-            setError('Token tidak ditemukan, silakan login kembali');
             setTimeout(() => {
                 navigate('/');
             }, 200);
@@ -278,18 +285,16 @@ const Product = () => {
                 if (response.data.status) {
                     setProducts(response.data.data);
                     setTotalPages(response.data.pagination.last_page);
-                    setError(null);
                 } else {
                     setProducts([]);
                     setTotalPages(1);
-                    setError(null);
                 }
                 setLoading(false);
             })
             .catch((error) => {
                 console.error("Error fetching products:", error);
                 setProducts([]);
-                setError('Terjadi kesalahan saat mengambil data produk');
+                alert(error.response.data.message);
                 setLoading(false);
             });
     }, [currentPage, searchTerm]);
@@ -299,13 +304,9 @@ const Product = () => {
         return <Loading />;
     }
 
-    if (error) {
-        return <div className="text-red-500">{error}</div>;
-    }
-
     return (
         <div className="p-4 sm:ml-64">
-            <h1 className="font-medium text-blue-300 text-3xl mt-20">Produk</h1>
+            <h1 className="font-medium text-[#3ABEF9] text-3xl mt-20">Produk</h1>
             <div className="p-4 border-2 border-gray-200 rounded-lg mt-10">
                 <div className="overflow-x-auto sm:rounded-lg p-4">
                     <div className="flex items-center justify-between gap-4 mb-8">
@@ -322,78 +323,81 @@ const Product = () => {
                                     placeholder="Cari produk..."
                                     value={searchInput}
                                     onChange={handleSearchInput}
-                                    className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3ABEF9] focus:border-transparent"
                                 />
                             </form>
                         </div>
                         <button
                             onClick={openCreateDialog}
-                            className="px-4 py-2 bg-blue-500 hover:bg-blue-800 text-white rounded-lg"
+                            className="px-4 py-2 bg-[#3ABEF9] hover:bg-blue-800 text-white rounded-lg"
                         >
                             Tambah Product
                         </button>
                     </div>
-                    <table className="w-full text-sm text-left rtl:text-right">
-                        <thead className="text-xs text-white uppercase bg-blue-300">
-                            <tr>
-                                <th scope="col" className="px-6 py-3">No</th>
-                                <th scope="col" className="px-6 py-3">Nama Produk</th>
-                                <th scope="col" className="px-6 py-3">Harga</th>
-                                <th scope="col" className="px-6 py-3">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products.length > 0 ? (
-                                products.map((product, index) => (
-                                    <tr key={product.id} className="odd:bg-white even:bg-gray-50 border-b">
-                                        <td className="px-6 py-3">{index + 1}</td>
-                                        <td className="px-6 py-3">{product.name}</td>
-                                        <td className="px-6 py-3">{new Intl.NumberFormat().format(product.price)}</td>
-                                        <td className="px-6 py-3">
-                                            <div className="flex gap-2">
+                    <div className="relative overflow-hidden rounded-lg border border-gray-200">
+
+                        <table className="w-full text-sm text-left rtl:text-right">
+                            <thead className="text-xs text-white uppercase bg-[#3ABEF9]">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">No</th>
+                                    <th scope="col" className="px-6 py-3">Nama Produk</th>
+                                    <th scope="col" className="px-6 py-3">Harga</th>
+                                    <th scope="col" className="px-6 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {products.length > 0 ? (
+                                    products.map((product, index) => (
+                                        <tr key={product.id} className="odd:bg-white even:bg-gray-50 border-b">
+                                            <td className="px-6 py-3">{(currentPage - 1) * 10 + index + 1}</td>
+                                            <td className="px-6 py-3">{product.name}</td>
+                                            <td className="px-6 py-3">{new Intl.NumberFormat().format(product.price)}</td>
+                                            <td className="px-6 py-3">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => openDetailDialog(product)}
+                                                        className="text-white bg-[#3ABEF9] hover:bg-blue-500 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                    >
+                                                        <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openEditDialog(product)}
+                                                        className="text-white bg-yellow-500 hover:bg-yellow-700 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                    >
+                                                        <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openDeleteDialog(product)}
+                                                        className="text-white bg-red-500 hover:bg-red-800 font-medium rounded-lg text-sm px-3 py-2 flex items-center">
+                                                        <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4" className="px-6 py-10 text-center">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <p className="text-gray-500 text-lg font-medium">Data belum tersedia</p>
+                                                {searchTerm && (
+                                                    <p className="text-gray-400 mt-2">
+                                                        Tidak ada produk yang sesuai dengan pencarian "{searchTerm}"
+                                                    </p>
+                                                )}
                                                 <button
-                                                    onClick={() => openDetailDialog(product)}
-                                                    className="text-white bg-blue-300 hover:bg-blue-600 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                    onClick={resetSearch}
+                                                    className="px-4 py-2 bg-[#3ABEF9] hover:bg-blue-500 rounded-lg flex items-center gap-2 mt-4"
                                                 >
-                                                    <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => openEditDialog(product)}
-                                                    className="text-white bg-yellow-500 hover:bg-yellow-700 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
-                                                >
-                                                    <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => openDeleteDialog(product)}
-                                                    className="text-white bg-red-500 hover:bg-red-800 font-medium rounded-lg text-sm px-3 py-2 flex items-center">
-                                                    <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                                                    <FontAwesomeIcon icon={faArrowLeft} className='text-white' />
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="4" className="px-6 py-10 text-center">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-gray-500 text-lg font-medium">Data belum tersedia</p>
-                                            {searchTerm && (
-                                                <p className="text-gray-400 mt-2">
-                                                    Tidak ada produk yang sesuai dengan pencarian "{searchTerm}"
-                                                </p>
-                                            )}
-                                            <button
-                                                onClick={resetSearch}
-                                                className="px-4 py-2 bg-blue-300 hover:bg-blue-500 rounded-lg flex items-center gap-2 mt-4"
-                                            >
-                                                <FontAwesomeIcon icon={faArrowLeft} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 {products.length > 0 && (
                     <div className="flex justify-center items-center gap-2 mt-4">
@@ -411,7 +415,7 @@ const Product = () => {
                                     key={page}
                                     onClick={() => setCurrentPage(page)}
                                     className={`px-4 py-2 rounded-lg ${page === currentPage
-                                        ? "bg-blue-500 text-white"
+                                        ? "bg-[#3ABEF9] text-white"
                                         : "bg-gray-300 hover:bg-gray-400"
                                         }`}
                                 >
@@ -434,7 +438,6 @@ const Product = () => {
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-white p-6 rounded-lg w-full max-w-md">
                         <p>Apakah Anda yakin ingin menghapus produk {productToDelete.name}?</p>
-
                         <div className="flex justify-center gap-4 mt-4">
                             <button
                                 onClick={deleteProduct}
@@ -463,7 +466,7 @@ const Product = () => {
                         >
                             ✖
                         </button>
-                        <h2 className="text-lg text-blue-300 font-bold mb-8">Detail Produk</h2>
+                        <h2 className="text-lg text-[#3ABEF9] font-bold mb-8">Detail Produk</h2>
                         <div className="mb-4">
                             <h4 className="mb-2 font-semibold">Nama Produk:</h4>
                             <input
@@ -539,7 +542,6 @@ const Product = () => {
 
                             ))}
                         </div>
-
                         <div className="flex justify-center gap-4">
                             <button
                                 onClick={closeDetailDialog}
@@ -555,8 +557,8 @@ const Product = () => {
 
             {isCreateDialogOpen && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 ">
-                    <div className="relative bg-white p-6 rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto">
-                        <h2 className="text-lg font-bold text-blue-300 mb-8">Tambah Produk</h2>
+                    <div className="relative bg-white p-6 rounded-lg w-full max-w-xl max-h-[80vh] overflow-y-auto">
+                        <h2 className="text-lg font-bold text-[#3ABEF9] mb-8">Tambah Produk</h2>
                         <form onSubmit={(e) => e.preventDefault()}>
                             <h4 className='mb-2 font-semibold'>Nama Produk</h4>
                             <input
@@ -633,7 +635,7 @@ const Product = () => {
                                     <>
                                         <button
                                             onClick={createProduct}
-                                            className="bg-blue-500 hover:bg-blue-800 text-white px-4 py-2 rounded-lg"
+                                            className="bg-[#3ABEF9] hover:bg-blue-500 text-white px-4 py-2 rounded-lg"
                                         >
                                             Simpan
                                         </button>
@@ -653,8 +655,8 @@ const Product = () => {
 
             {isEditDialogOpen && productToEdit && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                    <div className="relative bg-white p-6 rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto">
-                        <h2 className="text-lg font-bold text-blue-300 mb-8">Update Produk</h2>
+                    <div className="relative bg-white p-6 rounded-lg w-full max-w-xl max-h-[80vh] overflow-y-auto">
+                        <h2 className="text-lg font-bold text-[#3ABEF9] mb-8">Update Produk</h2>
                         <form onSubmit={(e) => e.preventDefault()}>
                             <h4 className='mb-2 font-semibold'>Nama Produk:</h4>
                             <input
@@ -733,7 +735,7 @@ const Product = () => {
                                     <>
                                         <button
                                             onClick={updateProduct}
-                                            className="bg-blue-500 hover:bg-blue-800 text-white px-4 py-2 rounded-lg"
+                                            className="bg-[#3ABEF9] hover:bg-blue-500 text-white px-4 py-2 rounded-lg"
                                         >
                                             Simpan
                                         </button>
@@ -748,6 +750,12 @@ const Product = () => {
                             </div>
                         </form>
                     </div>
+                </div>
+            )}
+
+            {error && (
+                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-black text-white px-4 py-2 rounded-md shadow-lg z-50">
+                    {errorMessage}
                 </div>
             )}
 

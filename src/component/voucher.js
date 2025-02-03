@@ -11,7 +11,6 @@ const Voucher = () => {
     const [vouchers, setVouchers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loading2, setLoading2] = useState(false);
-    const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -19,27 +18,30 @@ const Voucher = () => {
     const [showEditDialog, setShowEditDialog] = useState(false);
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [voucherToDelete, setVoucherToDelete] = useState(null);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [error, setError] = useState(false);
+    const [selectedVoucher, setSelectedVoucher] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const navigate = useNavigate();
+
     const [newVoucher, setNewVoucher] = useState({
         id: '',
         name: '',
         description: '',
         discount: ''
     });
+
     const [voucherToEdit, setVoucherToEdit] = useState({
         id: '',
         name: '',
         description: '',
         discount: ''
     });
-    const [selectedVoucher, setSelectedVoucher] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchInput, setSearchInput] = useState('');
-    const navigate = useNavigate();
 
     useEffect(() => {
         const token = Cookies.get('token');
         if (!token) {
-            setError('Token tidak ditemukan, silakan login kembali');
             setTimeout(() => {
                 navigate('/');
             }, 200);
@@ -60,18 +62,16 @@ const Voucher = () => {
                 if (response.data.status) {
                     setVouchers(response.data.data);
                     setTotalPages(response.data.pagination.last_page);
-                    setError(null);
                 } else {
                     setVouchers([]);
                     setTotalPages(1);
-                    setError(null);
                 }
                 setLoading(false);
             })
             .catch((error) => {
                 console.error("Error fetching data:", error);
                 setVouchers([]);
-                setError('Terjadi kesalahan saat mengambil data');
+                alert(error.response.data.message);
                 setLoading(false);
             });
     }, [currentPage, searchTerm]);
@@ -126,7 +126,6 @@ const Voucher = () => {
         if (voucherToDelete) {
             const token = Cookies.get('token');
             if (!token) {
-                setError('Token tidak ditemukan, silakan login kembali');
                 setTimeout(() => {
                     navigate('/');
                 }, 200);
@@ -140,11 +139,15 @@ const Voucher = () => {
                     }
                 });
                 setVouchers(vouchers.filter(vouchers => vouchers.id !== voucherToDelete.id));
-                handleCloseDialog();
+                closeDeleteDialog();
             } catch (error) {
                 console.error("Error deleting voucher:", error);
-                setError('Terjadi kesalahan saat menghapus voucher');
-                handleCloseDialog();
+                setErrorMessage(error.response.data.message);
+                setError(true);
+                setTimeout(() => {
+                    setError(false);
+                }, 3000);
+                closeDeleteDialog();
             }
         }
     };
@@ -154,7 +157,6 @@ const Voucher = () => {
 
         const token = Cookies.get('token');
         if (!token) {
-            setError('Token tidak ditemukan, silakan login kembali');
             setLoading2(false);
             setTimeout(() => {
                 navigate('/');
@@ -182,12 +184,20 @@ const Voucher = () => {
                         discount: ''
                     });
                 } else {
-                    setError('Gagal membuat voucher');
+                    setErrorMessage(error.response.data.message);
+                    setError(true);
+                    setTimeout(() => {
+                        setError(false);
+                    }, 3000);
                 }
             })
             .catch((error) => {
                 console.error("Error creating voucher:", error);
-                setError('Terjadi kesalahan saat membuat voucher');
+                setErrorMessage(error.response.data.message);
+                setError(true);
+                setTimeout(() => {
+                    setError(false);
+                }, 3000);
             })
             .finally(() => {
                 setLoading2(false);
@@ -199,7 +209,6 @@ const Voucher = () => {
 
         const token = Cookies.get('token');
         if (!token) {
-            setError('Token tidak ditemukan, silakan login kembali');
             setLoading2(false);
             setTimeout(() => {
                 navigate('/');
@@ -220,13 +229,22 @@ const Voucher = () => {
                 if (response.data.status) {
                     setShowEditDialog(false);
                     setVoucherToEdit(null);
+                    window.location.reload();
                 } else {
-                    setError('Gagal membuat voucher');
+                    setErrorMessage(error.response.data.message);
+                    setError(true);
+                    setTimeout(() => {
+                        setError(false);
+                    }, 3000);
                 }
             })
             .catch((error) => {
                 console.error("Error creating voucher:", error);
-                setError('Terjadi kesalahan saat membuat voucher');
+                setErrorMessage(error.response.data.message);
+                setError(true);
+                setTimeout(() => {
+                    setError(false);
+                }, 3000);
             })
             .finally(() => {
                 setLoading2(false);
@@ -243,7 +261,7 @@ const Voucher = () => {
 
     return (
         <div className="p-4 sm:ml-64">
-            <h1 className="font-medium text-blue-300 text-3xl mt-20">Daftar Voucher</h1>
+            <h1 className="font-medium text-[#3ABEF9] text-3xl mt-20">Daftar Voucher</h1>
             <div className="p-4 border-2 border-gray-200 rounded-lg mt-10">
                 <div className="relative overflow-x-auto sm:rounded-lg p-4">
                     <div className="flex items-center justify-between gap-4 mb-8">
@@ -257,80 +275,82 @@ const Voucher = () => {
                                     placeholder="Cari voucher..."
                                     value={searchInput}
                                     onChange={handleSearchInput}
-                                    className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3ABEF9] focus:border-transparent"
                                 />
                             </form>
                         </div>
                         <button
                             onClick={() => setShowCreateDialog(true)}
-                            className="px-4 py-2 bg-blue-500 hover:bg-blue-800 text-white rounded-lg"
+                            className="px-4 py-2 bg-[#3ABEF9] hover:bg-blue-500 text-white rounded-lg"
                         >
                             Tambah Voucher
                         </button>
                     </div>
-                    <table className="w-full text-sm text-left rtl:text-right">
-                        <thead className="text-xs text-white uppercase bg-blue-300">
-                            <tr>
-                                <th scope="col" className="px-6 py-3">No</th>
-                                <th scope="col" className="px-6 py-3">Kode</th>
-                                <th scope="col" className="px-6 py-3">Nama Voucher</th>
-                                <th scope="col" className="px-6 py-3">Diskon</th>
-                                <th scope="col" className="px-6 py-3">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {vouchers.length > 0 ? (
-                                vouchers.map((voucher, index) => (
-                                    <tr key={voucher.id} className="odd:bg-white even:bg-gray-50 border-b">
-                                        <td className="px-6 py-3">{index + 1}</td>
-                                        <td className="px-6 py-3">{voucher.id}</td>
-                                        <td className="px-6 py-3">{voucher.name}</td>
-                                        <td className="px-6 py-3">{voucher.discount}</td>
-                                        <td className="px-6 py-3">
-                                            <div className="flex gap-2">
+                    <div className="relative overflow-hidden rounded-lg border border-gray-200">
+                        <table className="w-full text-sm text-left rtl:text-right">
+                            <thead className="text-xs text-white uppercase bg-[#3ABEF9]">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">No</th>
+                                    <th scope="col" className="px-6 py-3">Kode</th>
+                                    <th scope="col" className="px-6 py-3">Nama Voucher</th>
+                                    <th scope="col" className="px-6 py-3">Diskon</th>
+                                    <th scope="col" className="px-6 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {vouchers.length > 0 ? (
+                                    vouchers.map((voucher, index) => (
+                                        <tr key={voucher.id} className="odd:bg-white even:bg-gray-50 border-b">
+                                            <td className="px-6 py-3">{(currentPage - 1) * 10 + index + 1}</td>
+                                            <td className="px-6 py-3">{voucher.id}</td>
+                                            <td className="px-6 py-3">{voucher.name}</td>
+                                            <td className="px-6 py-3">{voucher.discount}</td>
+                                            <td className="px-6 py-3">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => openDetailDialog(voucher)}
+                                                        className="text-white bg-[#3ABEF9] hover:bg-blue-500 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                    >
+                                                        <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openEditDialog(voucher)}
+                                                        className="text-white bg-yellow-500 hover:bg-yellow-700 font-medium rounded-lg text-sm px-3 py-2 flex items-center">
+                                                        <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openDeleteDialog(voucher)}
+                                                        className="text-white bg-red-500 hover:bg-red-800 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                    >
+                                                        <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-10 text-center">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <p className="text-gray-500 text-lg font-medium">Data belum tersedia</p>
+                                                {searchTerm && (
+                                                    <p className="text-gray-400 mt-2">
+                                                        Tidak ada voucher yang sesuai dengan pencarian "{searchTerm}"
+                                                    </p>
+                                                )}
                                                 <button
-                                                    onClick={() => openDetailDialog(voucher)}
-                                                    className="text-white bg-blue-300 hover:bg-blue-600 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
+                                                    onClick={resetSearch}
+                                                    className="px-4 py-2 bg-[#3ABEF9] hover:bg-blue-500 rounded-lg flex items-center gap-2 mt-4"
                                                 >
-                                                    <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => openEditDialog(voucher)}
-                                                    className="text-white bg-yellow-500 hover:bg-yellow-700 font-medium rounded-lg text-sm px-3 py-2 flex items-center">
-                                                    <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => openDeleteDialog(voucher)}
-                                                    className="text-white bg-red-500 hover:bg-red-800 font-medium rounded-lg text-sm px-3 py-2 flex items-center"
-                                                >
-                                                    <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                                                    <FontAwesomeIcon icon={faArrowLeft} className='text-white' />
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" className="px-6 py-10 text-center">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-gray-500 text-lg font-medium">Data belum tersedia</p>
-                                            {searchTerm && (
-                                                <p className="text-gray-400 mt-2">
-                                                    Tidak ada voucher yang sesuai dengan pencarian "{searchTerm}"
-                                                </p>
-                                            )}
-                                            <button
-                                                onClick={resetSearch}
-                                                className="px-4 py-2 bg-blue-300 hover:bg-blue-500 rounded-lg flex items-center gap-2 mt-4"
-                                            >
-                                                <FontAwesomeIcon icon={faArrowLeft} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 {vouchers.length > 0 && (
                     <div className="flex justify-center items-center gap-2 mt-4">
@@ -348,7 +368,7 @@ const Voucher = () => {
                                     key={page}
                                     onClick={() => setCurrentPage(page)}
                                     className={`px-4 py-2 rounded-lg ${page === currentPage
-                                        ? "bg-blue-500 text-white"
+                                        ? "bg-[#3ABEF9] text-white"
                                         : "bg-gray-300 hover:bg-gray-400"
                                         }`}
                                 >
@@ -394,7 +414,7 @@ const Voucher = () => {
             {showEditDialog && voucherToEdit && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg p-12">
-                        <h2 className="text-lg font-bold text-blue-300 mb-8">Edit Voucher</h2>
+                        <h2 className="text-lg font-bold text-[#3ABEF9] mb-8">Edit Voucher</h2>
                         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
                             <div className="mb-4">
                                 <h4 className='mb-2 font-semibold'>Kode Voucher:</h4>
@@ -449,7 +469,7 @@ const Voucher = () => {
                                     <>
                                         <button
                                             onClick={updateVoucher}
-                                            className="py-2 px-4 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-700"
+                                            className="py-2 px-4 bg-[#3ABEF9] text-white rounded-lg shadow-lg hover:bg-blue-500"
                                         >
                                             Simpan
                                         </button>
@@ -471,7 +491,7 @@ const Voucher = () => {
             {showDetailDialog && selectedVoucher && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg p-12">
-                        <h1 className='text-blue-300 text-lg font-bold mb-8'>Detail Voucher</h1>
+                        <h1 className='text-[#3ABEF9] text-lg font-bold mb-8'>Detail Voucher</h1>
                         <div className="mb-4">
                             <h4 className="mb-2 font-semibold">Nama Voucher:</h4>
                             <input
@@ -521,7 +541,7 @@ const Voucher = () => {
             {showCreateDialog && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg p-12">
-                        <h2 className="text-lg font-bold text-blue-300 mb-8">Buat Voucher Baru</h2>
+                        <h2 className="text-lg font-bold text-[#3ABEF9] mb-8">Buat Voucher Baru</h2>
                         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
                             <div className="mb-4">
                                 <h4 className='mb-2'>Kode Voucher:</h4>
@@ -576,7 +596,7 @@ const Voucher = () => {
                                     <>
                                         <button
                                             onClick={handleCreateVoucher}
-                                            className="py-2 px-4 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-700"
+                                            className="py-2 px-4 bg-[#3ABEF9] text-white rounded-lg shadow-lg hover:bg-blue-500"
                                         >
                                             Simpan
                                         </button>
@@ -592,6 +612,11 @@ const Voucher = () => {
 
                         </form>
                     </div>
+                </div>
+            )}
+            {error && (
+                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-black text-white px-4 py-2 rounded-md shadow-lg z-50">
+                    {errorMessage}
                 </div>
             )}
         </div>
