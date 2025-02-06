@@ -23,6 +23,7 @@ const Voucher = () => {
     const [selectedVoucher, setSelectedVoucher] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchInput, setSearchInput] = useState('');
+    const [indexPage, setIndexPage] = useState(1);
     const navigate = useNavigate();
 
     const [newVoucher, setNewVoucher] = useState({
@@ -67,6 +68,7 @@ const Voucher = () => {
                     setTotalPages(1);
                 }
                 setLoading(false);
+                setIndexPage(currentPage);
             })
             .catch((error) => {
                 console.error("Error fetching data:", error);
@@ -255,6 +257,10 @@ const Voucher = () => {
         setShowCreateDialog(false);
     };
 
+    const getIndex = (index) => {
+        return (indexPage - 1) * 10 + index + 1;
+    };
+
     if (loading) {
         return <Loading />;
     }
@@ -301,7 +307,7 @@ const Voucher = () => {
                                 {vouchers.length > 0 ? (
                                     vouchers.map((voucher, index) => (
                                         <tr key={voucher.id} className="odd:bg-white even:bg-gray-50 border-b">
-                                            <td className="px-6 py-3">{(currentPage - 1) * 10 + index + 1}</td>
+                                            <td className="px-6 py-3">{getIndex(index)}</td>
                                             <td className="px-6 py-3">{voucher.id}</td>
                                             <td className="px-6 py-3">{voucher.name}</td>
                                             <td className="px-6 py-3">{voucher.discount}</td>

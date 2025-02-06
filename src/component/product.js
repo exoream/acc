@@ -24,6 +24,8 @@ const Product = () => {
     const [error, setError] = useState(false);
     const navigate = useNavigate();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [indexPage, setIndexPage] = useState(1);
+    const availableSizes = ['S', 'M', 'L', 'X'];
 
     const [newProduct, setNewProduct] = useState({
         name: '',
@@ -245,10 +247,23 @@ const Product = () => {
     const handleInputChangeEdit = (e) => {
         const { name, value } = e.target;
         if (name.includes('product_size')) {
-            const index = name.split('[')[1].split(']')[0];
+            const sizeKey = name.split('[')[1].split(']')[0];
             const key = name.split('.')[1];
-            const updatedSizes = [...productToEdit.product_size];
-            updatedSizes[index][key] = value;
+
+            let updatedSizes = [...productToEdit.product_size];
+
+            const sizeIndex = updatedSizes.findIndex((item) => item.size === sizeKey);
+
+            if (sizeIndex !== -1) {
+                updatedSizes[sizeIndex][key] = value;
+            } else {
+                updatedSizes.push({
+                    size: sizeKey,
+                    stock: key === 'stock' ? value : 0,
+                    description: key === 'description' ? value : '',
+                });
+            }
+
             setProductToEdit({ ...productToEdit, product_size: updatedSizes });
         } else {
             setProductToEdit({ ...productToEdit, [name]: value });
@@ -260,6 +275,10 @@ const Product = () => {
         if (file) {
             setProductToEdit({ ...productToEdit, image: file });
         }
+    };
+
+    const getIndex = (index) => {
+        return (indexPage - 1) * 10 + index + 1;
     };
 
     useEffect(() => {
@@ -290,6 +309,7 @@ const Product = () => {
                     setTotalPages(1);
                 }
                 setLoading(false);
+                setIndexPage(currentPage);
             })
             .catch((error) => {
                 console.error("Error fetching products:", error);
@@ -349,7 +369,7 @@ const Product = () => {
                                 {products.length > 0 ? (
                                     products.map((product, index) => (
                                         <tr key={product.id} className="odd:bg-white even:bg-gray-50 border-b">
-                                            <td className="px-6 py-3">{(currentPage - 1) * 10 + index + 1}</td>
+                                            <td className="px-6 py-3">{getIndex(index)}</td>
                                             <td className="px-6 py-3">{product.name}</td>
                                             <td className="px-6 py-3">{new Intl.NumberFormat().format(product.price)}</td>
                                             <td className="px-6 py-3">
@@ -699,29 +719,37 @@ const Product = () => {
                             />
 
                             <div className="mt-4">
-                                <h3 className='mb-2 font-semibold'>Ukuran dan Stok</h3>
-                                {productToEdit.product_size.map((size, index) => (
-                                    <div key={index}>
-                                        <h4 className='mb-2 text-sm'>{size.size}</h4>
-                                        <input
-                                            type="number"
-                                            name={`product_size[${index}].stock`}
-                                            placeholder={`Stok Ukuran ${size.size}`}
-                                            value={size.stock}
-                                            onChange={handleInputChangeEdit}
-                                            className="w-full p-2 border rounded mb-2"
-                                        />
-                                        <textarea
-                                            type="text"
-                                            name={`product_size[${index}].description`}
-                                            placeholder={`Deskripsi Ukuran ${size.size}`}
-                                            value={size.description}
-                                            rows={5}
-                                            onChange={handleInputChangeEdit}
-                                            className="w-full p-2 border rounded mb-2"
-                                        />
-                                    </div>
-                                ))}
+                                <h3 className="mb-2 font-semibold">Ukuran dan Stok</h3>
+                                {availableSizes.map((size, index) => {
+                                    const existingSize = productToEdit.product_size.find((s) => s.size === size) || {
+                                        size,
+                                        stock: 0,
+                                        description: '',
+                                    };
+
+                                    return (
+                                        <div key={index}>
+                                            <h4 className="mb-2 text-sm">{size}</h4>
+                                            <input
+                                                type="number"
+                                                name={`product_size[${size}].stock`}
+                                                placeholder={`Stok Ukuran ${size}`}
+                                                value={existingSize.stock}
+                                                onChange={handleInputChangeEdit}
+                                                className="w-full p-2 border rounded mb-2"
+                                            />
+                                            <textarea
+                                                type="text"
+                                                name={`product_size[${size}].description`}
+                                                placeholder={`Deskripsi Ukuran ${size}`}
+                                                value={existingSize.description}
+                                                rows={5}
+                                                onChange={handleInputChangeEdit}
+                                                className="w-full p-2 border rounded mb-2"
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             <div className="flex justify-center gap-4 mt-4">

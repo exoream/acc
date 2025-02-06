@@ -31,17 +31,13 @@ const Navbar = () => {
             <nav className="fixed top-0 z-20 w-full bg-white border-b border-gray-200">
                 <div className="px-3 py-3 lg:px-5 lg:pl-3">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center justify-start rtl:justify-end">
-                            </div>
-                            <div className='flex items-center gap-4'>
-                                <div className='h-6 w-2 bg-[#3ABEF9] rounded-lg'></div>
-                                <h1 className='text-lg font-bold text-gray-700 flex items-center'>
-                                    Alni Accessories
-                                </h1>
-                            </div>
-                            <img src={DM3} className='h-10 mr-10' />
+                        <div className="flex items-center gap-4 ml-64">
+                            <div className='h-6 w-2 bg-[#3ABEF9] rounded-lg'></div>
+                            <h1 className='text-lg font-bold text-gray-700 flex items-center'>
+                                Alni Accessories
+                            </h1>
                         </div>
+                        <img src={DM3} className='h-10 mr-10' />
                     </div>
                 </div>
             </nav>

@@ -19,6 +19,7 @@ const User = () => {
     const [searchInput, setSearchInput] = useState('');
     const [errorMessage, setErrorMessage] = useState("");
     const [error, setError] = useState(false);
+    const [indexPage, setIndexPage] = useState(1);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -48,6 +49,7 @@ const User = () => {
                     setTotalPage(1);
                 }
                 setLoading(false);
+                setIndexPage(currentPage);
             })
             .catch((error) => {
                 console.error("Error fetching data:", error);
@@ -118,6 +120,10 @@ const User = () => {
         setCurrentPage(page);
     };
 
+    const getIndex = (index) => {
+        return (indexPage - 1) * 10 + index + 1;
+    };
+
     if (loading) {
         return <Loading />;
     }
@@ -155,7 +161,7 @@ const User = () => {
                                 {users.length > 0 ? (
                                     users.map((user, index) => (
                                         <tr key={user.id} className="odd:bg-white even:bg-gray-50 border-b last:rounded-b-lg">
-                                            <td className="px-6 py-3">{(currentPage - 1) * 10 + index + 1}</td>
+                                            <td className="px-6 py-3">{getIndex(index)}</td>
                                             <td className="px-6 py-3">{user.name}</td>
                                             <td className="px-6 py-3">{user.email}</td>
                                             <td className="px-6 py-3">
